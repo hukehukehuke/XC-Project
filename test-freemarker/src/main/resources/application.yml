@@ -1,0 +1,9 @@
+server:
+  port: 8088
+spring:
+  application:
+    name: test-framaker #指定服务名字
+  freemarker:
+    cache: false #关闭模板缓存
+    settings:
+      template_update_delay: 0 #检车模板更新时间
