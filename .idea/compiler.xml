@@ -7,7 +7,9 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+        <module name="test-ribbitmq-cumstomer" />
         <module name="xcframeworkcommon" />
+        <module name="test-ribbitmq-producter" />
         <module name="xc-framework-utils" />
         <module name="xcframeworkmodel" />
         <module name="test-freemarker" />
@@ -19,6 +21,8 @@
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="test-freemarker" options="-parameters" />
+      <module name="test-ribbitmq-cumstomer" options="-parameters" />
+      <module name="test-ribbitmq-producter" options="-parameters" />
       <module name="xc-framework-parent" options="" />
       <module name="xc-framework-utils" options="-parameters" />
       <module name="xc-service-api" options="-parameters" />
