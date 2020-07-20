@@ -46,5 +46,5 @@ public interface CmsPageControllerApi {
             @ApiImplicitParam(name = "")
     })
     public ResponseResult delete(String id);
-
+    public ResponseResult post(String pageId);
 }

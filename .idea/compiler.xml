@@ -12,6 +12,7 @@
         <module name="test-ribbitmq-producter" />
         <module name="xc-framework-utils" />
         <module name="xcframeworkmodel" />
+        <module name="xc-service-manage-cms-client" />
         <module name="test-freemarker" />
         <module name="xc-service-api" />
         <module name="xc-service-manage-cms" />
@@ -27,6 +28,7 @@
       <module name="xc-framework-utils" options="-parameters" />
       <module name="xc-service-api" options="-parameters" />
       <module name="xc-service-manage-cms" options="-parameters" />
+      <module name="xc-service-manage-cms-client" options="-parameters" />
       <module name="xcframeworkcommon" options="-parameters" />
       <module name="xcframeworkmodel" options="-parameters" />
     </option>

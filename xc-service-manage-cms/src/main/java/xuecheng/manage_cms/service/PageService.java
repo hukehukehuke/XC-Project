@@ -1,5 +1,6 @@
 package xuecheng.manage_cms.service;
 
+import com.alibaba.fastjson.JSON;
 import com.mongodb.client.gridfs.GridFSBucket;
 import com.mongodb.client.gridfs.GridFSDownloadStream;
 import com.mongodb.client.gridfs.model.GridFSFile;
@@ -17,7 +18,10 @@ import com.xuecheng.framework.model.response.QueryResult;
 import com.xuecheng.framework.model.response.ResponseResult;
 import freemarker.cache.StringTemplateLoader;
 import freemarker.template.Configuration;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.bson.types.ObjectId;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -26,10 +30,14 @@ import org.springframework.data.mongodb.gridfs.GridFsTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.client.RestTemplate;
+import xuecheng.manage_cms.config.RabbitmqConfig;
 import xuecheng.manage_cms.dao.CmsConfigRepository;
 import xuecheng.manage_cms.dao.CmsPageRepository;
 import xuecheng.manage_cms.dao.CmsTemplateRepository;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -51,6 +59,9 @@ public class PageService {
     private GridFsTemplate gridFsTemplate;
     @Autowired
     private GridFSBucket gridFSBucket;
+
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
 
     /**
      * 页面查询方法
@@ -155,10 +166,10 @@ public class PageService {
     }
 
     //执行静态化
-    private String generateHtml(String templateContent,Map model){
+    private String generateHtml(String templateContent, Map model) {
         Configuration configuration = new Configuration(Configuration.getVersion());
         StringTemplateLoader stringTemplateLoader = new StringTemplateLoader();
-        stringTemplateLoader.putTemplate("template",templateContent);
+        stringTemplateLoader.putTemplate("template", templateContent);
         return null;
     }
 
@@ -197,4 +208,44 @@ public class PageService {
         return body;
     }
 
+    //页面发布
+    public ResponseResult post(String pageId) {
+        //执行页面静态化
+        String pageHtml = this.getPageHtml(pageId);
+        //将页面静态化文件存储到GridFS中
+        CmsPage cmsPage = this.saveHtml(pageId, pageHtml);
+        //向MQ发消息
+        this.sendostPage(pageId);
+        return new ResponseResult(CommonCode.SUCCESS);
+    }
+
+    //向MQ发消息
+    public void sendostPage(String pageId) {
+        CmsPage cmsPage = this.getById(pageId);
+        Map map = new HashMap();
+        map.put("pageId",pageId);
+        String toJSONString = JSON.toJSONString(map);
+        rabbitTemplate.convertAndSend(RabbitmqConfig.EX_ROUTING_CMS_POSTPAGE,cmsPage.getSiteId(),toJSONString);
+    }
+
+    //保存html到GridFS
+    private CmsPage saveHtml(String pageId, String htmlContent) {
+        CmsPage cmsPage = this.getById(pageId);
+        if (cmsPage == null) {
+            ExceptionCast.cast(CmsCode.CMS_GENERATEHTML_TEMPLATEISNULL);
+        }
+        //将htmlContent内容专程输入流
+        ObjectId objectId = null;
+        try {
+            InputStream inputStream = IOUtils.toInputStream(htmlContent, "UTF-8");
+            //将html文件内容保存到GridFS
+            objectId = gridFsTemplate.store(inputStream, cmsPage.getPageName());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        //将html文件id更新到cmsPage中
+        cmsPage.setPageId(objectId.toHexString());
+        cmsPageRepository.save(cmsPage);
+        return cmsPage;
+    }
 }
